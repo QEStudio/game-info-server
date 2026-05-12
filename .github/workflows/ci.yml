@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]    # 所有分支提交都触发
+  pull_request:
+    branches: [ "**" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check & Test
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format fix
+        run: cargo fmt --all
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Check binary size
+        run: |
+          size=$(stat -c%s target/release/game-info-server)
+          echo "Binary size: $(numfmt --to=iec $size)"
+          if [ $size -gt 20971520 ]; then
+            echo "::warning::Binary size exceeds 20MB: $(numfmt --to=iec $size)"
+          fi

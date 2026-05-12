@@ -1,0 +1,10 @@
+{
+    "game_name": "测试游戏",
+    "kind_name": "测试类型",
+    "game_id": 1001,
+    "version_id": 2001,
+    "custom_version_id": 3001,
+    "custom": true,
+    "description": "这是一个测试游戏",
+    "link": "https://example.com"
+}
