@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ "**" ]    # 所有分支提交都触发
+    branches: [ "**" ]
   pull_request:
     branches: [ "**" ]
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_TARGET: x86_64-unknown-linux-musl
 
 jobs:
   check:
@@ -17,26 +18,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install musl tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          targets: ${{ env.CARGO_TARGET }}
           components: rustfmt, clippy
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ env.CARGO_TARGET }}
 
       - name: Format fix
         run: cargo fmt --all
 
       - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --all-targets --target ${{ env.CARGO_TARGET }} -- -D warnings
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target ${{ env.CARGO_TARGET }}
 
       - name: Check binary size
         run: |
-          size=$(stat -c%s target/release/game-info-server)
+          size=$(stat -c%s target/${{ env.CARGO_TARGET }}/release/game-info-server)
           echo "Binary size: $(numfmt --to=iec $size)"
           if [ $size -gt 20971520 ]; then
             echo "::warning::Binary size exceeds 20MB: $(numfmt --to=iec $size)"
